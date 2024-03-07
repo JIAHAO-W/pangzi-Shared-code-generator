@@ -40,8 +40,46 @@
             <artifactId>freemarker</artifactId>
             <version>2.3.32</version>
         </dependency>
-
+        <!--https://picocli.info/-->
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>4.7.5</version>
+        </dependency>
     </dependencies>
+
+    <!--Maven打包程序 -->
+    <build>
+        <plugins>
+            <!-- Maven Assembly Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>com.yupi.Main</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+<!--                    <finalName>${assemblyFinalName}</finalName> &lt;!&ndash; 使用属性引用指定打包依赖后的JAR包名称 &ndash;&gt;-->
+<!--                    <appendAssemblyId>false</appendAssemblyId> &lt;!&ndash; 禁止添加描述符 ID 的后缀 &ndash;&gt;-->
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 
     <properties>

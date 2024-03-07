@@ -10,7 +10,16 @@ import java.io.IOException;
  * 静态代码和动态代码结合生成
  */
 public class MainGenerator {
-    public static void main(String[] args) throws IOException, TemplateException {
+    public static void main(String[] args) throws TemplateException, IOException {
+        MainTemplateConfig mainTemplateConfig = new MainTemplateConfig();
+        mainTemplateConfig.setAuthor("JHWU");
+        mainTemplateConfig.setOutputText("求和结果为");
+        mainTemplateConfig.setLoop(false);
+
+        doGenerator(mainTemplateConfig);
+    }
+    public static void doGenerator(Object model) throws IOException, TemplateException {
+
         //静态代码生成
         String projectPath = System.getProperty("user.dir");
         //projectPath:D:\JAVA\PROJECTS\YUPI\pangzi-generator
@@ -26,11 +35,7 @@ public class MainGenerator {
 
         String dynamicinputPath = projectPath + File.separator +"yuzi-generator-basic"+ File.separator  + "src/main/resources/templates/MainTemplate.java.ftl";
         String dynamicoutputPath = outputPath + File.separator +"acm-template/src/com/yupi/acm"+File.separator + "MainTemplate.java";
-        MainTemplateConfig mainTemplateConfig = new MainTemplateConfig();
-        mainTemplateConfig.setAuthor("JHWU");
-        mainTemplateConfig.setOutputText("求和结果为");
-        mainTemplateConfig.setLoop(false);
 
-        DynamicGenerator.doGenerator(dynamicinputPath,dynamicoutputPath,mainTemplateConfig);
+        DynamicGenerator.doGenerator(dynamicinputPath,dynamicoutputPath,model);
     }
 }

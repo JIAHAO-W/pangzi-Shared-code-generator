@@ -18,6 +18,7 @@ public class FreeMarkerTest {
         //new出Configuration 对象，参数为 FreeMarker 版本号
         Configuration configuration = new Configuration(Configuration.VERSION_2_3_32);
 
+//        System.out.println(System.getProperty("user.dir"));
         // 指定模板文件所在的路径
         configuration.setDirectoryForTemplateLoading(new File("yuzi-generator-basic/src/main/resources/templates"));
 

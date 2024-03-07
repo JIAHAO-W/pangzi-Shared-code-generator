@@ -9,9 +9,9 @@ import lombok.Data;
 @Data
 public class MainTemplateConfig {
     //作者姓名
-    private String Author;
+    private String author;
     //输出信息
-    private String OutputText;
+    private String outputText;
 
     //是否循环
     private Boolean loop;
