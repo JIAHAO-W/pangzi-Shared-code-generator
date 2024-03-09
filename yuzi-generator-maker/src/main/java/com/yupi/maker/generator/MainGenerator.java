@@ -12,15 +12,15 @@ import java.io.File;
 import java.io.IOException;
 
 public class MainGenerator {
-    public static void main(String[] args) throws TemplateException, IOException {
+    public static void main(String[] args) throws TemplateException, IOException, InterruptedException {
         Meta meta = MetaManager.getMetaObject();
         System.out.println(meta);
 
         //输出根路径
         String projectPath = System.getProperty("user.dir");
-        String ouputPath = projectPath + File.separator + "generated" + File.separator + meta.getName();
-        if (!FileUtil.exist(ouputPath)){
-            FileUtil.mkdir(ouputPath);
+        String outputPath = projectPath + File.separator + "generated" + File.separator + meta.getName();
+        if (!FileUtil.exist(outputPath)){
+            FileUtil.mkdir(outputPath);
         }
 
         //读取 resources 目录
@@ -31,7 +31,7 @@ public class MainGenerator {
         //java包基础路径
         String outputBasePackage = meta.getBasePackage();
         String outputBasePackagePath = StrUtil.join("/",StrUtil.split(outputBasePackage,"."));
-        String outputBaseJavaPackagePath = ouputPath + File.separator + "src/main/java/" + outputBasePackagePath;
+        String outputBaseJavaPackagePath = outputPath + File.separator + "src/main/java/" + outputBasePackagePath;
 
         String inputFilePath;
         String outputFilePath;
@@ -65,7 +65,34 @@ public class MainGenerator {
         outputFilePath = outputBaseJavaPackagePath + File.separator + "Main.java";
         DynamicFileGenerator.doGenerator(inputFilePath,outputFilePath,meta);
 
+        //generator.DynamicGenerator
+        inputFilePath = inputResourcePath + File.separator + "templates/java/generator/DynamicGenerator.java.ftl";
+        outputFilePath = outputBaseJavaPackagePath + File.separator + "/generator/DynamicGenerator.java";
+        DynamicFileGenerator.doGenerator(inputFilePath,outputFilePath,meta);
 
+        //generator.MainGenerator
+        inputFilePath = inputResourcePath + File.separator + "templates/java/generator/MainGenerator.java.ftl";
+        outputFilePath = outputBaseJavaPackagePath + File.separator + "/generator/MainGenerator.java";
+        DynamicFileGenerator.doGenerator(inputFilePath,outputFilePath,meta);
+
+        //generator.StaticGenerator
+        inputFilePath = inputResourcePath + File.separator + "templates/java/generator/StaticGenerator.java.ftl";
+        outputFilePath = outputBaseJavaPackagePath + File.separator + "/generator/StaticGenerator.java";
+        DynamicFileGenerator.doGenerator(inputFilePath,outputFilePath,meta);
+
+        //pom.xml
+        inputFilePath = inputResourcePath + File.separator + "templates/pom.xml.ftl";
+        outputFilePath = outputPath + File.separator + "pom.xml";
+        DynamicFileGenerator.doGenerator(inputFilePath,outputFilePath,meta);
+
+        //构建jar包
+        JarGenerator.doGenerate(outputPath);
+
+        //封装脚本
+        String shellOutputFilePath = outputPath +File.separator +"generator";
+        String jarName = String.format("%s-%s-jar-with-dependencies.jar",meta.getName(),meta.getVersion());
+        String jarPath = "target/" + jarName;
+        ScriptGenerator.doGenerate(shellOutputFilePath,jarPath);
 
 
 
