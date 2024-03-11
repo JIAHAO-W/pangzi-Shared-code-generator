@@ -6,8 +6,9 @@
   "author": "JHWU",
   "createTime": "2024-03-08",
   "fileConfig": {
-    "inputRootPath": "D:/JAVA/PROJECTS/YUPI/pangzi-generator/pangzi-generator-demo-projects/acm-template-pro",
+    "inputRootPath": ".source/acm-template-pro",
     "outputRootPath": "generated",
+    "sourceRootPath": "D:/JAVA/PROJECTS/YUPI/pangzi-generator/pangzi-generator-demo-projects/acm-template-pro",
     "type": "dir",
     "files": [
       {
