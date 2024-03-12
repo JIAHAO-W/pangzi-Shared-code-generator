@@ -10,6 +10,8 @@ import com.yupi.maker.meta.enums.FileTypeEnum;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Collectors;
+
 public class MetaValidator {
     public static void doValidAndFill(Meta meta) {
         validAndFillMetaRoot(meta);
@@ -29,6 +31,18 @@ public class MetaValidator {
             return;
         }
         for (Meta.ModelConfigDTO.ModelsInfo modelInfo : modelInfoList) {
+            //如果为分组，则不校验
+            String groupKey = modelInfo.getGroupKey();
+            if(StrUtil.isNotEmpty(groupKey)){
+                //生成中间参数
+                List<Meta.ModelConfigDTO.ModelsInfo> subModelInfoList = modelInfo.getModels();
+                String allArgsStr = modelInfo.getModels().stream()
+                        .map(subModelInfo -> String.format("\"--%s\"", subModelInfo.getFieldName()))
+                        .collect(Collectors.joining(","));
+                modelInfo.setAllArgsStr(allArgsStr);
+                System.out.println(allArgsStr);
+                continue;
+            }
             // 输出路径默认值
             String fieldName = modelInfo.getFieldName();
             if (StrUtil.isBlank(fieldName)) {
@@ -77,7 +91,13 @@ public class MetaValidator {
         if (!CollectionUtil.isNotEmpty(fileInfoList)) {
             return;
         }
+
         for (Meta.FileConfigDTO.FilesInfo fileInfo : fileInfoList) {
+            //类型为group,不校验
+            if(FileTypeEnum.GROUP.getValue().equals(fileInfo.getType())){
+                continue;
+            }
+
             // inputPath: 必填
             String inputPath = fileInfo.getInputPath();
             if (StrUtil.isBlank(inputPath)) {
