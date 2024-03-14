@@ -14,6 +14,7 @@ import com.yupi.maker.template.enums.FileFilterRangeEnum;
 import com.yupi.maker.template.enums.FileFilterRuleEnum;
 import com.yupi.maker.template.model.FileFilterConfig;
 import com.yupi.maker.template.model.TemplateMakerFileConfig;
+import com.yupi.maker.template.model.TemplateMakerModelConfig;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
  * 模板制作工具
  */
 public class TemplateMaker {
-    public static long makeTemplate(Meta newMeta, String originProjectPath, TemplateMakerFileConfig templateMakerFileConfig, Meta.ModelConfigDTO.ModelsInfo modelsInfo , String searchStr, Long id) {
+    public static long makeTemplate(Meta newMeta, String originProjectPath, TemplateMakerFileConfig templateMakerFileConfig, TemplateMakerModelConfig templateMakerModelConfig, Long id) {
         //没有id ,则生成
         if (id == null) {
             id = IdUtil.getSnowflakeNextId();
@@ -60,7 +61,7 @@ public class TemplateMaker {
             //获取过滤后的文件列表（不会存在目录）
             List<File> fileList = FileFilter.doFilter(inputFilePath,fileInfoConfig.getFilterConfigList());
             for (File file : fileList) {
-                Meta.FileConfigDTO.FilesInfo fileInfo = makeFileTemplate(modelsInfo, searchStr, sourceRootPath, file);
+                Meta.FileConfigDTO.FilesInfo fileInfo = makeFileTemplate(templateMakerModelConfig, sourceRootPath, file);
                 newFileInfoList.add(fileInfo);
             }
         }
@@ -85,6 +86,41 @@ public class TemplateMaker {
             
         }
 
+        //处理模型信息
+        List<TemplateMakerModelConfig.ModelInfoConfig> models = templateMakerModelConfig.getModels();
+        //-转换为配置接受的ModelsInfo对象
+        List<Meta.ModelConfigDTO.ModelsInfo> inputModelInfoList = models
+                .stream()
+                .map(modelInfoConfig -> {
+                    Meta.ModelConfigDTO.ModelsInfo modelsInfo = new Meta.ModelConfigDTO.ModelsInfo();
+                    BeanUtil.copyProperties(modelInfoConfig,modelsInfo);
+                    return modelsInfo;
+                }
+                ).collect(Collectors.toList());
+
+        //本次新增的模型配置列表
+        List<Meta.ModelConfigDTO.ModelsInfo> newModelInfoList = new ArrayList<>();
+
+        //如果是模型组
+        TemplateMakerModelConfig.ModelGroupConfig modelGroupConfig = templateMakerModelConfig.getModelGroupConfig();
+        if(modelGroupConfig != null){
+            String condition = modelGroupConfig.getCondition();
+            String groupName = modelGroupConfig.getGroupName();
+            String groupKey = modelGroupConfig.getGroupKey();
+
+            //新增分组配置
+            Meta.ModelConfigDTO.ModelsInfo groupModelInfo = new Meta.ModelConfigDTO.ModelsInfo();
+            groupModelInfo.setGroupKey(groupKey);
+            groupModelInfo.setGroupName(groupName);
+            groupModelInfo.setCondition(condition);
+            //模型全部放在一个分组里
+            groupModelInfo.setModels(inputModelInfoList);
+            newModelInfoList.add(groupModelInfo);
+        }else {
+            //不分组，添加所有的模型信息到列表
+            newModelInfoList.addAll(inputModelInfoList);
+        }
+
         // 三、生成配置文件
         String metaOutputPath = sourceRootPath + File.separator + "meta.json";
         //如果已有meta文件，说明不是第一次制作，则在meta基础上进行修改
@@ -94,14 +130,14 @@ public class TemplateMaker {
             newMeta = oldMeta;
 
             //1.追加配置参数
-            List<Meta.FileConfigDTO.FilesInfo> filesInfoList = oldMeta.getFileConfig().getFiles();
+            List<Meta.FileConfigDTO.FilesInfo> filesInfoList = newMeta.getFileConfig().getFiles();
             filesInfoList.addAll(newFileInfoList);
-            List<Meta.ModelConfigDTO.ModelsInfo> modelsInfoList = oldMeta.getModelConfig().getModels();
-            modelsInfoList.add(modelsInfo);
+            List<Meta.ModelConfigDTO.ModelsInfo> modelsInfoList = newMeta.getModelConfig().getModels();
+            modelsInfoList.addAll(newModelInfoList);
 
             //配置去重
-            oldMeta.getFileConfig().setFiles(distincFiles(filesInfoList));
-            oldMeta.getModelConfig().setModels(distincModels(modelsInfoList));
+            newMeta.getFileConfig().setFiles(distincFiles(filesInfoList));
+            newMeta.getModelConfig().setModels(distincModels(modelsInfoList));
 
         } else {
             //1. 构造配置参数
@@ -119,7 +155,7 @@ public class TemplateMaker {
             newMeta.setModelConfig(modelConfigDTO);
             List<Meta.ModelConfigDTO.ModelsInfo> modelsInfoList = new ArrayList<>();
             modelConfigDTO.setModels(modelsInfoList);
-            modelsInfoList.add(modelsInfo);
+            modelsInfoList.addAll(newModelInfoList);
 
 
 
@@ -133,13 +169,12 @@ public class TemplateMaker {
 
     /**
      * 制作文件模板
-     * @param modelsInfo
-     * @param searchStr
+     * @param templateMakerModelConfig
      * @param sourceRootPath
      * @param inputFile
      * @return
      */
-    private static Meta.FileConfigDTO.FilesInfo makeFileTemplate(Meta.ModelConfigDTO.ModelsInfo modelsInfo, String searchStr, String sourceRootPath, File inputFile) {
+    private static Meta.FileConfigDTO.FilesInfo makeFileTemplate(TemplateMakerModelConfig templateMakerModelConfig, String sourceRootPath, File inputFile) {
         //要挖坑的文件绝对路径（用于制作模板）
         //注意：win系统需要对路径进行转义
         String fileInputAbsolutePath = inputFile.getAbsolutePath().replaceAll("\\\\","/");
@@ -158,8 +193,24 @@ public class TemplateMaker {
             fileContent = FileUtil.readUtf8String(fileInputAbsolutePath);
         }
 
-        String replacement = String.format("${%s}", modelsInfo.getFieldName());
-        String newFileContent = StrUtil.replace(fileContent, searchStr, replacement);
+        //支持多个模型：对同一个文件的内容，遍历模型进行多轮替换
+        TemplateMakerModelConfig.ModelGroupConfig modelGroupConfig = templateMakerModelConfig.getModelGroupConfig();
+        String newFileContent = fileContent;
+        String replacement;
+        for (TemplateMakerModelConfig.ModelInfoConfig modelInfoConfig : templateMakerModelConfig.getModels()) {
+            //不是分组
+            if(modelGroupConfig == null){
+                replacement = String.format("${%s}", modelInfoConfig.getFieldName());
+            }else {
+                //是分组
+                String groupKey = modelGroupConfig.getGroupKey();
+                //注意要多挖一个层级
+                replacement = String.format("${%s.%s}", groupKey,modelInfoConfig.getFieldName());
+            }
+            //多次替换
+            newFileContent = StrUtil.replace(newFileContent, modelInfoConfig.getReplaceText(), replacement);
+        }
+
 
         //文件配置信息
         Meta.FileConfigDTO.FilesInfo filesInfo = new Meta.FileConfigDTO.FilesInfo();
@@ -234,18 +285,54 @@ public class TemplateMaker {
 
     /**
      * 模型去重
-     * @param ModelsInfoList
+     * @param modelsInfoList
      * @return
      */
-    private static List<Meta.ModelConfigDTO.ModelsInfo> distincModels(List<Meta.ModelConfigDTO.ModelsInfo> ModelsInfoList) {
+    private static List<Meta.ModelConfigDTO.ModelsInfo> distincModels(List<Meta.ModelConfigDTO.ModelsInfo> modelsInfoList) {
+        //1.将所有模型配置（modelInfo）分为有分组和无分组的
+        //先处理有分组的模型
+        //{"groupKey":"a",models:[1,2]},{"groupKey":"a",models:[2,3]},{"groupKey":"b",models:[4,5]}
+        //先转换为{"groupKey":"a",models:[[1,2],[2,3]]},{"groupKey":"b",models:[[4,5]]}
+        Map<String, List<Meta.ModelConfigDTO.ModelsInfo>> groupKeyModelInfoListMap = modelsInfoList
+                .stream()
+                .filter(modelsInfo -> StrUtil.isNotBlank(modelsInfo.getGroupKey()))
+                .collect(
+                        Collectors.groupingBy(Meta.ModelConfigDTO.ModelsInfo::getGroupKey)
+                );
 
+        //2.对于有分组的模型配置，如果有相同的分组，同分组内的模型进行合并(merge)，不同分组可同时保留
+        //同组内配置合并
+        //{"groupKey":"a",models:[[1,2],[2,3]]}
+        //{"groupKey":"a",models:[1,2,2,3]}
+        //{"groupKey":"a",models:[1,2,3]}
+        Map<String,Meta.ModelConfigDTO.ModelsInfo> groupKeyMergedModelInfoMap = new HashMap<>();
+        for (Map.Entry<String, List<Meta.ModelConfigDTO.ModelsInfo>> entry : groupKeyModelInfoListMap.entrySet()) {
+            List<Meta.ModelConfigDTO.ModelsInfo> tempModelInfoList = entry.getValue();
+            //[1,2,2,3]
+            List<Meta.ModelConfigDTO.ModelsInfo> newModelInfoList =new ArrayList<>(tempModelInfoList.stream()
+                    .flatMap(modelsInfo -> modelsInfo.getModels().stream())
+                    .collect(
+                            Collectors.toMap(Meta.ModelConfigDTO.ModelsInfo::getFieldName, o -> o, (e, r) -> r)
+                    ).values());
 
-        List<Meta.ModelConfigDTO.ModelsInfo> newModelInfoList = new ArrayList<>(ModelsInfoList.stream()
+            //使用新的group配置
+            Meta.ModelConfigDTO.ModelsInfo newModelInfo = CollUtil.getLast(tempModelInfoList);
+            newModelInfo.setModels(newModelInfoList);
+            String groupKey = entry.getKey();
+            groupKeyMergedModelInfoMap.put(groupKey,newModelInfo);
+
+        }
+
+        //3.创建新的模型配置列表（结果列表），先将合并后的分组添加到结果列表中
+        ArrayList<Meta.ModelConfigDTO.ModelsInfo> resultList = new ArrayList<>(groupKeyMergedModelInfoMap.values());
+
+        //4.再将无分组的模型配置列表添加到结果列表
+        resultList.addAll(new ArrayList<>(modelsInfoList.stream()
+                .filter(modelsInfo -> StrUtil.isBlank(modelsInfo.getGroupKey()))
                 .collect(
                         Collectors.toMap(Meta.ModelConfigDTO.ModelsInfo::getFieldName, o -> o, (e, r) -> r)
-                ).values()
-        );
-        return newModelInfoList;
+                ).values()));
+        return resultList;
         
     }
 
@@ -259,22 +346,34 @@ public class TemplateMaker {
         String projectPath = System.getProperty("user.dir");
         String originProjectPath = new File(projectPath).getParent() + File.separator + "pangzi-generator-demo-projects/springboot-init";
         String inputFilePath1 = "src/main/java/com/yupi/springbootinit/common";
-        String inputFilePath2 = "src/main/java/com/yupi/springbootinit/controller";
-        List<String> inputFilePathList = Arrays.asList(inputFilePath1,inputFilePath2);
+        String inputFilePath2 = "src/main/resources/application.yml";
+        //模型参数配置
+        TemplateMakerModelConfig templateMakerModelConfig = new TemplateMakerModelConfig();
+
+        //-模型组配置
+        TemplateMakerModelConfig.ModelGroupConfig modelGroupConfig = new TemplateMakerModelConfig.ModelGroupConfig();
+        modelGroupConfig.setGroupKey("mysql");
+        modelGroupConfig.setGroupName("数据库配置");
+        templateMakerModelConfig.setModelGroupConfig(modelGroupConfig);
+        
+        //-模型配置
+        TemplateMakerModelConfig.ModelInfoConfig modelInfoConfig1 = new TemplateMakerModelConfig.ModelInfoConfig();
+        modelInfoConfig1.setFieldName("url");
+        modelInfoConfig1.setType("String");
+        modelInfoConfig1.setDescription("jdbc:mysql://localhost:3306/my_db");
+        modelInfoConfig1.setReplaceText("jdbc:mysql://localhost:3306/my_db");
+
+        TemplateMakerModelConfig.ModelInfoConfig modelInfoConfig2 = new TemplateMakerModelConfig.ModelInfoConfig();
+        modelInfoConfig2.setFieldName("username");
+        modelInfoConfig2.setType("String");
+        modelInfoConfig2.setReplaceText("root");
+        modelInfoConfig2.setDefaultValue("root");
+
+        List<TemplateMakerModelConfig.ModelInfoConfig> modelInfoConfigList = Arrays.asList(modelInfoConfig1, modelInfoConfig2);
+        templateMakerModelConfig.setModels(modelInfoConfigList);
 
 
-        //输入模型参数信息(首次)
-//        Meta.ModelConfigDTO.ModelsInfo modelsInfo = new Meta.ModelConfigDTO.ModelsInfo();
-//        modelsInfo.setFieldName("outputText");
-//        modelsInfo.setType("String");
-//        modelsInfo.setDefaultValue("sum = ");
-        //输入模型参数信息（第二次）
-        Meta.ModelConfigDTO.ModelsInfo modelsInfo = new Meta.ModelConfigDTO.ModelsInfo();
-        modelsInfo.setFieldName("className");
-        modelsInfo.setType("String");
-
-
-//        String searchStr = "Sum: ";
+        //替换变量
         String searchStr = "BaseResponse";
 
         TemplateMakerFileConfig.FileInfoConfig fileInfoConfig1 = new TemplateMakerFileConfig.FileInfoConfig();
@@ -306,7 +405,7 @@ public class TemplateMaker {
 
         System.out.println(templateMakerFileConfig.toString());
 
-        long id = makeTemplate(meta,originProjectPath,templateMakerFileConfig,modelsInfo,searchStr,null);
+        long id = makeTemplate(meta,originProjectPath,templateMakerFileConfig,templateMakerModelConfig,null);
         System.out.println(id);
 
 
