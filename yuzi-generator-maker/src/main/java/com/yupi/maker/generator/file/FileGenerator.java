@@ -1,6 +1,6 @@
 package com.yupi.maker.generator.file;
 
-import com.yupi.maker.model.DataModel;
+
 import freemarker.template.TemplateException;
 
 import java.io.File;

@@ -5,6 +5,8 @@ pangzi-generator.iml
 
 generated
 
+yuzi-generator-maker/.temp
+
 ### Java template
 # Compiled class file
 *.class
