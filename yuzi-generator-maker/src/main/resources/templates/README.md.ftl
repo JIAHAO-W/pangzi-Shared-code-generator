@@ -31,6 +31,6 @@ ${modelInfo?index +1})  ${modelInfo.fieldName}
 
 默认值：${modelInfo.defaultValue?c}
 
-缩写：-${modelInfo.abbr}
+<#--缩写：-${modelInfo.abbr}-->
 </#if>
 </#list>

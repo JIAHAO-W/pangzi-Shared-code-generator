@@ -13,4 +13,6 @@ public class TemplateMakerConfig {
     private String originProjectPath;
     TemplateMakerFileConfig fileConfig = new TemplateMakerFileConfig();
     TemplateMakerModelConfig modelConfig = new TemplateMakerModelConfig();
+
+    TemplateMakerOutputConfig outputConfig = new TemplateMakerOutputConfig();
 }
