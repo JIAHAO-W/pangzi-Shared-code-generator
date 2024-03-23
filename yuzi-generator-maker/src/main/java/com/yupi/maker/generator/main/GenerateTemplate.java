@@ -3,6 +3,7 @@ package com.yupi.maker.generator.main;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.resource.ClassPathResource;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.util.ZipUtil;
 import com.yupi.maker.generator.JarGenerator;
 import com.yupi.maker.generator.ScriptGenerator;
 import com.yupi.maker.generator.file.DynamicFileGenerator;
@@ -23,21 +24,32 @@ public abstract class GenerateTemplate {
         if (!FileUtil.exist(outputPath)){
             FileUtil.mkdir(outputPath);
         }
+        System.out.println("执行了第0步");
+
 
         //1.复制原始文件
         String sourceCopyDestPath = copySource(meta, outputPath);
+        System.out.println("执行了第1步");
 
         //2.代码生成
         generateCode(meta, outputPath);
+        System.out.println("执行了第2步");
+
 
         //3.构建jar包
         String jarPath = buildJar(outputPath, meta);
+        System.out.println("执行了第3步");
+
 
         //4.封装脚本
         String shellOutputFilePath = buildScript(outputPath,jarPath);
+        System.out.println("执行了第4步");
+
 
         //5.生成简易版的程序(产物包)
         buildDist(outputPath, sourceCopyDestPath, shellOutputFilePath, jarPath);
+        System.out.println("执行了第5步");
+
 
     }
 
@@ -47,7 +59,17 @@ public abstract class GenerateTemplate {
         return shellOutputFilePath;
     }
 
-    protected void buildDist(String outputPath, String sourceCopyDestPath, String shellOutputFilePath, String jarPath) {
+
+    /**
+     * 生成精简版程序
+     * @param outputPath
+     * @param sourceCopyDestPath
+     * @param shellOutputFilePath
+     * @param jarPath
+     * @return
+     */
+
+    protected String buildDist(String outputPath, String sourceCopyDestPath, String shellOutputFilePath, String jarPath) {
         //生成精简版的程序（产物包）
         String distOutputPath = outputPath + "-dist";
         //-拷贝 jar包
@@ -60,6 +82,7 @@ public abstract class GenerateTemplate {
         FileUtil.copy(shellOutputFilePath + ".bat",distOutputPath,true);
         //-拷贝 源模板文件
         FileUtil.copy(sourceCopyDestPath,distOutputPath,true);
+        return distOutputPath;
     }
 
     protected String buildJar(String outputPath,Meta meta) throws IOException, InterruptedException {
@@ -144,5 +167,16 @@ public abstract class GenerateTemplate {
         String sourceCopyDestPath = outputPath + File.separator + ".source";
         FileUtil.copy(sourceRootPath,sourceCopyDestPath,false);
         return sourceCopyDestPath;
+    }
+
+    /**
+     * 制作压缩包
+     * @param outputPath
+     * @return 压缩包路径
+     */
+    protected String buildZip(String outputPath){
+        String zipPath = outputPath + ".zip";
+        ZipUtil.zip(outputPath,zipPath);
+        return zipPath;
     }
 }
