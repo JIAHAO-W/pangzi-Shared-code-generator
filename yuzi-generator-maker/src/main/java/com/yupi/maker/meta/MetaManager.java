@@ -22,7 +22,8 @@ public class MetaManager {
     }
 
     private static Meta initMeta(){
-        String metaJson = ResourceUtil.readUtf8Str("springboot-init-meta.json");
+        //todo 初始json文件修改
+        String metaJson = ResourceUtil.readUtf8Str("meta.json");
         Meta newMeta = JSONUtil.toBean(metaJson, Meta.class);
 //        Meta newMeta = JSONObject.parseObject(metaJson, Meta.class);
         //校验配置文件，处理默认值

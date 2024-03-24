@@ -24,31 +24,31 @@ public abstract class GenerateTemplate {
         if (!FileUtil.exist(outputPath)){
             FileUtil.mkdir(outputPath);
         }
-        System.out.println("执行了第0步");
+
 
 
         //1.复制原始文件
         String sourceCopyDestPath = copySource(meta, outputPath);
-        System.out.println("执行了第1步");
+
 
         //2.代码生成
         generateCode(meta, outputPath);
-        System.out.println("执行了第2步");
+
 
 
         //3.构建jar包
         String jarPath = buildJar(outputPath, meta);
-        System.out.println("执行了第3步");
+
 
 
         //4.封装脚本
         String shellOutputFilePath = buildScript(outputPath,jarPath);
-        System.out.println("执行了第4步");
+
 
 
         //5.生成简易版的程序(产物包)
         buildDist(outputPath, sourceCopyDestPath, shellOutputFilePath, jarPath);
-        System.out.println("执行了第5步");
+
 
 
     }
@@ -123,6 +123,11 @@ public abstract class GenerateTemplate {
         //cli.command.ListCommand
         inputFilePath = inputResourcePath + File.separator + "templates/java/cli/command/ListCommand.java.ftl";
         outputFilePath = outputBaseJavaPackagePath + File.separator + "/cli/command/ListCommand.java";
+        DynamicFileGenerator.doGenerator(inputFilePath,outputFilePath, meta);
+
+        //cli.command.JsonGenerateCommand
+        inputFilePath = inputResourcePath + File.separator + "templates/java/cli/command/JsonGenerateCommand.java.ftl";
+        outputFilePath = outputBaseJavaPackagePath + File.separator + "/cli/command/JsonGenerateCommand.java";
         DynamicFileGenerator.doGenerator(inputFilePath,outputFilePath, meta);
 
         //cli.CommandExecutor

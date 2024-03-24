@@ -112,7 +112,6 @@ export async function userLoginUsingPost(
   });
 }
 
-
 /** userLogout POST /api/user/logout */
 export async function userLogoutUsingPost(options?: { [key: string]: any }) {
   return request<API.BaseResponseBoolean_>('/api/user/logout', {
