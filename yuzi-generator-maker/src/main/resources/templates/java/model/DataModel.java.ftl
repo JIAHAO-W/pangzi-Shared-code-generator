@@ -24,9 +24,11 @@ public class DataModel {
     *  ${modelInfo.groupName}
     */
     public ${modelInfo.type} ${modelInfo.groupKey} = new ${modelInfo.type}();
+    <#if modelInfo.description ??>
     /**
     *  ${modelInfo.description}
     */
+    </#if>
     @Data
     public static class ${modelInfo.type}{
         <#list modelInfo.models as modelInfo>

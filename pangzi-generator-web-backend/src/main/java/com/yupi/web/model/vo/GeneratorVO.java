@@ -1,11 +1,10 @@
 package com.yupi.web.model.vo;
 
 import cn.hutool.json.JSONUtil;
-import com.yupi.web.meta.Meta;
 import com.yupi.web.model.entity.Generator;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
-
+import com.yupi.maker.meta.Meta;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;

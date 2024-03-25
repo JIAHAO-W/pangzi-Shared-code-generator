@@ -140,6 +140,11 @@ declare namespace API {
     version?: string;
   };
 
+  type GeneratorMakeRequest = {
+    meta?: Meta;
+    zipFilePath?: string;
+  };
+
   type GeneratorQueryRequest = {
     author?: string;
     basePackage?: string;
@@ -177,7 +182,7 @@ declare namespace API {
 
   type GeneratorUseRequest = {
     dataModel?: Record<string, any>;
-    id?: string;
+    id?: number;
   };
 
   type GeneratorVO = {
@@ -222,6 +227,17 @@ declare namespace API {
     userName?: string;
     userProfile?: string;
     userRole?: string;
+  };
+
+  type Meta = {
+    author?: string;
+    basePackage?: string;
+    createTime?: string;
+    description?: string;
+    fileConfig?: FileConfigDTO;
+    modelConfig?: ModelConfigDTO;
+    name?: string;
+    version?: string;
   };
 
   type ModelConfigDTO = {
