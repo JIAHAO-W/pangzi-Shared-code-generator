@@ -3,6 +3,7 @@ package com.yupi.maker.meta;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.List;
 
 @NoArgsConstructor
@@ -20,7 +21,7 @@ public class Meta {
 
     @NoArgsConstructor
     @Data
-    public static class FileConfigDTO {
+    public static class FileConfigDTO implements Serializable {
         private String inputRootPath;
         private String outputRootPath;
         private String type;
@@ -29,7 +30,7 @@ public class Meta {
 
         @NoArgsConstructor
         @Data
-        public static class FilesInfo {
+        public static class FilesInfo implements Serializable{
             private String inputPath;
             private String outputPath;
 
@@ -44,12 +45,12 @@ public class Meta {
 
     @NoArgsConstructor
     @Data
-    public static class ModelConfigDTO {
+    public static class ModelConfigDTO implements Serializable{
         private List<ModelsInfo> models;
 
         @NoArgsConstructor
         @Data
-        public static class ModelsInfo {
+        public static class ModelsInfo implements Serializable{
             private String fieldName;
             private String type;
             private String description;

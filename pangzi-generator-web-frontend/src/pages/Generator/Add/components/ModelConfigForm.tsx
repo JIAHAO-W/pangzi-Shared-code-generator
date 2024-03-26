@@ -31,14 +31,7 @@ export default (props: Props) => {
       <Form.Item label="默认值" name={[field.name, 'defaultValue']}>
         <Input />
       </Form.Item>
-      {/*<Form.Item label="默认值" name={[field.name, 'defaultValue']}>*/}
-      {/*  /!* 修改部分：根据字段类型进行判断 *!/*/}
-      {/*  {typeof field.type === 'boolean' ? (*/}
-      {/*    <Input type="boolean" />*/}
-      {/*  ) : (*/}
-      {/*    <Input />*/}
-      {/*  )}*/}
-      {/*</Form.Item>*/}
+
 
       <Form.Item label="缩写" name={[field.name, 'abbr']}>
         <Input />
